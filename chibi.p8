@@ -52,7 +52,7 @@ function _init()
   menu_selection=1
   score=0
   run=0
-  last_mouse=0
+  last_mouse,last_x,last_y=0,0,0
   cartdata("tobiasvl_chibi_challenge")
   poke(0x5f2d,1)
   title_dir=true
@@ -98,12 +98,15 @@ function _update()
     local x,y=stat(32),stat(33)
     if (emulated) x/=2 y/=2
     cursor(10,25)
-    if x>=10 and x<=34 and y>=25 and y<=29 then
-      menu_selection=1
-    elseif x>=10 and x<=48 and y>=31 and y<=35 then
-      menu_selection=2
-    elseif x>=10 and x<=42 and y>=37 and y<=41 then
-      menu_selection=3
+    if x!=old_x or y!=old_y or mouse then
+      old_x,old_y=x,y
+      if x>=10 and x<=34 and y>=25 and y<=29 then
+        menu_selection=1
+      elseif x>=10 and x<=48 and y>=31 and y<=35 then
+        menu_selection=2
+      elseif x>=10 and x<=42 and y>=37 and y<=41 then
+        menu_selection=3
+      end
     end
     if mouse then
       if x>=2 and x<=4 and y>=2 and y<=4 then
@@ -134,9 +137,12 @@ function _update()
     else
       local x,y=stat(32),stat(33)
       if (emulated) x/=2 y/=2
-      x,y=ceil(x/9),ceil(y/9)
-      new_highlight.x=(x==patrick.x-1 or x==patrick.x or x==patrick.x+1) and x or 0
-      new_highlight.y=(y==patrick.y-1 or y==patrick.y or y==patrick.y+1) and y or 0
+      if x!=old_x or y!=old_y or mouse then
+        old_x,old_y=x,y
+        x,y=ceil(x/9),ceil(y/9)
+        new_highlight.x=(x==patrick.x-1 or x==patrick.x or x==patrick.x+1) and x or 0
+        new_highlight.y=(y==patrick.y-1 or y==patrick.y or y==patrick.y+1) and y or 0
+      end
     end
     if get_tile(new_highlight.x,new_highlight.y)>=0 then
       highlight=new_highlight
@@ -254,48 +260,51 @@ function _update()
     if mouse then
       local x,y=stat(32),stat(33)
       if (emulated) x/=2 y/=2
-      local cell_x,cell_y=ceil(x/9),ceil(y/9)
-      if mouse_pointer!=0 and get_tile(cell_x,cell_y)==-1 then
-        mouse_pointer=0
-      elseif patrick.x==-1 and x>=1 and x<=9 and y>=44 and y<=53 then
-        mouse_pointer=1
-      elseif patrick.x==cell_x and patrick.y==cell_y then
-        patrick={x=-1,y=-1}
-        balls[1].pos=0
-        mouse_pointer=1
-      elseif balls[2].pos==0 and x>=11 and x<=11+5 and y>=39+2 and y<=39+5+2 then
-        mouse_pointer=2
-      elseif balls[3].pos==0 and x>=11+7 and x<=11+5+7 and y>=39+2 and y<=39+5+2 then
-        mouse_pointer=3
-      elseif balls[4].pos==0 and x>=11+7+7 and x<=11+5+7+7 and y>=39+2 and y<=39+5+2 then
-        mouse_pointer=4
-      elseif balls[5].pos==0 and x>=11 and x<=11+5 and y>=39+7+2 and y<=39+7+5+2 then
-        mouse_pointer=5
-      elseif balls[6].pos==0 and x>=11+7 and x<=11+5+7 and y>=39+7+2 and y<=39+7+5+2 then
-        mouse_pointer=6
-      elseif balls[7].pos==0 and x>=11+7+7 and x<=11+5+7+7 and y>=39+7+2 and y<=39+7+5+2 then
-        mouse_pointer=7
-      elseif get_tile(cell_x,cell_y)==0 and mouse_pointer>0 then
-        if mouse_pointer==1 then
-          patrick.x,patrick.y=cell_x,cell_y
-        elseif mouse_pointer>0 then
-          set_tile(cell_x,cell_y,balls[mouse_pointer].id)
-        end
-        balls[mouse_pointer].pos=cell_x+(7*(cell_y-1))
-        mouse_pointer=0
-      elseif get_tile(cell_x,cell_y)>0 then
-        local pick_up=get_tile(cell_x,cell_y)
-        set_tile(cell_x,cell_y,0)
-        balls[pick_up].pos=0
-        if (pick_up==1) patrick.x,patrick.y=-1,-1
-        if mouse_pointer==1 then
-          patrick.x,patrick.y=cell_x,cell_y
+      if old_x!=x or old_y!=y or mouse then
+        old_x,old_y=x,y
+        local cell_x,cell_y=ceil(x/9),ceil(y/9)
+        if mouse_pointer!=0 and get_tile(cell_x,cell_y)==-1 then
+          mouse_pointer=0
+        elseif patrick.x==-1 and x>=1 and x<=9 and y>=44 and y<=53 then
+          mouse_pointer=1
+        elseif patrick.x==cell_x and patrick.y==cell_y then
+          patrick={x=-1,y=-1}
+          balls[1].pos=0
+          mouse_pointer=1
+        elseif balls[2].pos==0 and x>=11 and x<=11+5 and y>=39+2 and y<=39+5+2 then
+          mouse_pointer=2
+        elseif balls[3].pos==0 and x>=11+7 and x<=11+5+7 and y>=39+2 and y<=39+5+2 then
+          mouse_pointer=3
+        elseif balls[4].pos==0 and x>=11+7+7 and x<=11+5+7+7 and y>=39+2 and y<=39+5+2 then
+          mouse_pointer=4
+        elseif balls[5].pos==0 and x>=11 and x<=11+5 and y>=39+7+2 and y<=39+7+5+2 then
+          mouse_pointer=5
+        elseif balls[6].pos==0 and x>=11+7 and x<=11+5+7 and y>=39+7+2 and y<=39+7+5+2 then
+          mouse_pointer=6
+        elseif balls[7].pos==0 and x>=11+7+7 and x<=11+5+7+7 and y>=39+7+2 and y<=39+7+5+2 then
+          mouse_pointer=7
+        elseif get_tile(cell_x,cell_y)==0 and mouse_pointer>0 then
+          if mouse_pointer==1 then
+            patrick.x,patrick.y=cell_x,cell_y
+          elseif mouse_pointer>0 then
+            set_tile(cell_x,cell_y,balls[mouse_pointer].id)
+          end
           balls[mouse_pointer].pos=cell_x+(7*(cell_y-1))
-        elseif mouse_pointer>0 then
-          set_tile(cell_x,cell_y,balls[mouse_pointer].id)
-          balls[mouse_pointer].pos=cell_x+(7*(cell_y-1))
+          mouse_pointer=0
+        elseif get_tile(cell_x,cell_y)>0 then
+          local pick_up=get_tile(cell_x,cell_y)
+          set_tile(cell_x,cell_y,0)
+          balls[pick_up].pos=0
+          if (pick_up==1) patrick.x,patrick.y=-1,-1
+          if mouse_pointer==1 then
+            patrick.x,patrick.y=cell_x,cell_y
+            balls[mouse_pointer].pos=cell_x+(7*(cell_y-1))
+          elseif mouse_pointer>0 then
+            set_tile(cell_x,cell_y,balls[mouse_pointer].id)
+            balls[mouse_pointer].pos=cell_x+(7*(cell_y-1))
+          end
+          mouse_pointer=pick_up
         end
-        mouse_pointer=pick_up
       end
     end
   end
